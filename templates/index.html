@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Velocità Rete</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #d1d9e1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px 14px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 680px;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            background-color: #fff;
+            color: #333;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff8c00;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #e07b00;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+
+        .info {
+            background-color: #eef3f8;
+            color: #333;
+            border: 1px solid #d1d9e1;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .gauges {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 18px;
+            margin-top: 22px;
+        }
+
+        .gauge-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 14px 10px;
+            text-align: center;
+            background-color: #fafbfc;
+        }
+
+        .gauge-card h3 {
+            margin: 0 0 8px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .gauge-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 185px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+        }
+
+        .gauge-wrapper svg {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+
+        .gauge-arc-bg {
+            fill: none;
+            stroke: #e2e8f0;
+            stroke-width: 14;
+            stroke-linecap: round;
+        }
+
+        .gauge-arc-fill {
+            fill: none;
+            stroke-width: 14;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease;
+        }
+
+        .gauge-value {
+            position: absolute;
+            top: 56%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            line-height: 1.15;
+            pointer-events: none;
+        }
+
+        .gauge-unit {
+            display: block;
+            font-size: 12px;
+            font-weight: normal;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .loader {
+            border: 3px solid #d1d9e1;
+            border-top: 3px solid #ff8c00;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 8px;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        details {
+            cursor: pointer;
+            margin-top: 24px;
+            border-top: 1px solid #eee;
+            padding-top: 14px;
+        }
+
+        summary {
+            font-size: 13px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .history-wrap {
+            margin-top: 12px;
+            overflow-x: auto;
+            cursor: default;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            color: #333;
+        }
+
+        th, td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f6f9;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Monitor Velocità Rete</h2>
+
+    <label for="server-select">Server di riferimento:</label>
+    <select id="server-select">
+        <option value="">Automatico (miglior server disponibile)</option>
+    </select>
+
+    <button id="start-btn" onclick="startSpeedTest(true)">Avvia Speed Test</button>
+
+    <div id="status-box" class="message info">
+        <div id="spinner" class="loader"></div>
+        <span id="status-text">Premi "Avvia Speed Test" per avviare una nuova misurazione.</span>
+    </div>
+
+    <div class="gauges">
+        <div class="gauge-card">
+            <h3>Download</h3>
+            <div class="gauge-wrapper">
+                <svg viewBox="0 0 200 200" aria-label="Indicatore Download">
+                    <path class="gauge-arc-bg" d="M 34.17 138.00 A 76 76 0 1 1 165.83 138.00" />
+                    <path id="dl-fill" class="gauge-arc-fill" style="stroke: #ff8c00;" d="M 34.17 138.00 A 76 76 0 1 1 165.83 138.00" />
+                </svg>
+                <div class="gauge-value">
+                    <span id="dl-val">--</span>
+                    <span class="gauge-unit">Mbps</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="gauge-card">
+            <h3>Upload</h3>
+            <div class="gauge-wrapper">
+                <svg viewBox="0 0 200 200" aria-label="Indicatore Upload">
+                    <path class="gauge-arc-bg" d="M 34.17 138.00 A 76 76 0 1 1 165.83 138.00" />
+                    <path id="ul-fill" class="gauge-arc-fill" style="stroke: #28a745;" d="M 34.17 138.00 A 76 76 0 1 1 165.83 138.00" />
+                </svg>
+                <div class="gauge-value">
+                    <span id="ul-val">--</span>
+                    <span class="gauge-unit">Mbps</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <details open>
+        <summary>Storico ultime misurazioni</summary>
+        <div class="history-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data / Ora</th>
+                        <th>Download</th>
+                        <th>Upload</th>
+                        <th>Ping</th>
+                        <th>Server</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                    <tr><td colspan="5">Nessuna misurazione registrata.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </details>
+</div>
+
+<script>
+    const ARC_LENGTH = 318.35;
+
+    function initGauge(fillEl) {
+        fillEl.style.strokeDasharray = ARC_LENGTH;
+        fillEl.style.strokeDashoffset = ARC_LENGTH;
+    }
+
+    function updateGauge(fillEl, value, defaultMax) {
+        const safeVal = Math.max(0, Number(value) || 0);
+        const maxScale = safeVal > defaultMax ? Math.ceil(safeVal / 100) * 100 : defaultMax;
+        const ratio = Math.min(1, safeVal / maxScale);
+        fillEl.style.strokeDashoffset = ARC_LENGTH * (1 - ratio);
+    }
+
+    const dlFill = document.getElementById('dl-fill');
+    const ulFill = document.getElementById('ul-fill');
+    initGauge(dlFill);
+    initGauge(ulFill);
+
+    function setStatus(type, htmlContent, loading = false) {
+        const box = document.getElementById('status-box');
+        const spinner = document.getElementById('spinner');
+        const text = document.getElementById('status-text');
+        box.className = 'message ' + type;
+        spinner.style.display = loading ? 'block' : 'none';
+        text.innerHTML = htmlContent;
+    }
+
+    function applyResultToUI(data) {
+        document.getElementById('dl-val').innerText = data.download;
+        document.getElementById('ul-val').innerText = data.upload;
+        updateGauge(dlFill, data.download, 1000);
+        updateGauge(ulFill, data.upload, 300);
+
+        const cacheNote = data.cached ? ` (in cache da ${data.cache_age}s)` : '';
+        setStatus(
+            'success',
+            `<strong>Ping:</strong> ${data.ping} ms &nbsp;|&nbsp; <strong>Server:</strong> ${data.server}<br><small>Rilevato il ${data.timestamp}${cacheNote}</small>`,
+            false
+        );
+    }
+
+    async function loadServers() {
+        try {
+            const res = await fetch('api/servers');
+            const data = await res.json();
+            if (res.ok && data.status === 'success' && Array.isArray(data.servers)) {
+                const select = document.getElementById('server-select');
+                data.servers.forEach(srv => {
+                    const opt = document.createElement('option');
+                    opt.value = srv.id;
+                    opt.textContent = srv.label;
+                    select.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            // Mantiene opzione automatica
+        }
+    }
+
+    async function loadHistory() {
+        try {
+            const res = await fetch('api/history');
+            const data = await res.json();
+            if (!res.ok || data.status !== 'success') return;
+
+            if (data.latest_cached) {
+                applyResultToUI(data.latest_cached);
+            }
+
+            const tbody = document.getElementById('history-body');
+            if (!data.history || data.history.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5">Nessuna misurazione registrata.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.history.map(item => `
+                <tr>
+                    <td>${item.timestamp}</td>
+                    <td><strong>${item.download}</strong> Mbps</td>
+                    <td><strong>${item.upload}</strong> Mbps</td>
+                    <td>${item.ping} ms</td>
+                    <td>${item.server}</td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            // Ignora errori iniziali
+        }
+    }
+
+    async function startSpeedTest(force = false) {
+        const btn = document.getElementById('start-btn');
+        const serverId = document.getElementById('server-select').value;
+
+        btn.disabled = true;
+        setStatus('info', 'Misurazione in corso sul server selezionato... Attendere circa 15-25 secondi.', true);
+
+        const params = new URLSearchParams();
+        if (force) params.set('force', '1');
+        if (serverId) params.set('server_id', serverId);
+
+        try {
+            const response = await fetch('api/speedtest?' + params.toString(), { method: 'POST' });
+            const rawText = await response.text();
+            let data;
+
+            try {
+                data = JSON.parse(rawText);
+            } catch (e) {
+                setStatus('error', `Errore di comunicazione con il server Python (HTTP ${response.status}).`, false);
+                return;
+            }
+
+            if (response.ok && data.status === 'success') {
+                applyResultToUI(data);
+                await loadHistory();
+            } else {
+                setStatus('error', data.message || `Errore durante il test (HTTP ${response.status}).`, false);
+            }
+        } catch (error) {
+            setStatus('error', 'Errore di comunicazione con il server Python.', false);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        loadHistory();
+        loadServers();
+    });
+</script>
+
+</body>
+</html>
