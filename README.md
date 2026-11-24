@@ -64,10 +64,10 @@ Crea la directory delle unità utente (se non esiste già) e copia il file di se
 
 ```bash
 mkdir -p ~/.config/systemd/user
-cp deploy/speedtest-web.service ~/.config/systemd/user/
+cp deploy/speedtest-erick-systemd.service ~/.config/systemd/user/
 ```
 
-> **Nota:** Verifica che all'interno di `~/.config/systemd/user/speedtest-web.service` il percorso dell'eseguibile Gunicorn e della cartella coincida con il tuo utente Linux (sostituisci `/home/erick` con il tuo percorso reale se diverso).
+> **Nota:** Verifica che all'interno di `~/.config/systemd/user/speedtest-erick-systemd.service` il percorso dell'eseguibile Gunicorn e della cartella coincida con il tuo utente Linux (sostituisci `/home/erick` con il tuo percorso reale se diverso).
 
 Abilita la persistenza dell'utente e avvia il servizio:
 
@@ -83,7 +83,7 @@ systemctl --user restart speedtest-web.service
 
 Verifica lo stato del servizio:
 ```bash
-systemctl --user status speedtest-web.service
+systemctl --user status speedtest-erick-systemd.service
 ```
 
 ### 4. Configurare NGINX Reverse Proxy
