@@ -11,13 +11,14 @@ L'interfaccia grafica è sviluppata in **SVG puro** (senza dipendenze CDN estern
 ```text
 speedtest-web/
 ├── .gitignore
+├── .gitattributes
 ├── README.md
 ├── requirements.txt
 ├── speedtest_app.py
 ├── templates/
 │   └── index.html
 └── deploy/
-    ├── nginx.conf
+    ├── speedtest-erick.conf
     └── speedtest-web.service
 ```
 
