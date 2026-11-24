@@ -18,8 +18,8 @@ speedtest-web/
 ├── templates/
 │   └── index.html
 └── deploy/
-    ├── speedtest-erick.conf
-    └── speedtest-web.service
+    ├── speedtest-erick-nginx.conf
+    └── speedtest-erick-systemd.service
 ```
 
 ---
